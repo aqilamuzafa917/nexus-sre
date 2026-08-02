@@ -81,7 +81,7 @@ kubectl get svc
 The Nexus pod should be in the **Running** state, and the LoadBalancer service should expose an **EXTERNAL-IP** that can be used to access the Nexus web UI.
 
 
-## Continuous Integration Proposal
+## Continuous Integration Proposal (Task Number 5)
 
 A GitHub Actions workflow would be triggered whenever changes are pushed to the `main` branch. The workflow would:
 
