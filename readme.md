@@ -80,9 +80,17 @@ kubectl get svc
 
 The Nexus pod should be in the **Running** state, and the LoadBalancer service should expose an **EXTERNAL-IP** that can be used to access the Nexus web UI.
 
+
 ## Continuous Integration Proposal
 
-A GitHub Actions workflow can automatically build the updated Docker image, push it to Google Container Registry (or Artifact Registry), validate the Terraform configuration, and deploy the updated Kubernetes manifests to a test GKE cluster using Kustomize whenever changes are pushed to the `main` branch.
+A GitHub Actions workflow would be triggered whenever changes are pushed to the `main` branch. The workflow would:
+
+1. Build the updated Nexus Docker image.
+2. Push the image to Google Container Registry (GCR) or Artifact Registry.
+3. Validate the Terraform configuration (`terraform fmt` and `terraform validate`).
+4. Validate the Kubernetes manifests (or build them with Kustomize).
+5. Deploy the updated image and manifests to a dedicated test GKE cluster using `kubectl apply -k` (or Helm).
+6. Verify that the deployment succeeds before promoting the changes to production.
 
 ## Screenshots
 
