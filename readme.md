@@ -53,32 +53,80 @@ nexus-sre/
 └── screenshots/                # Evidence of successful deployment
 ```
 
-## Deployment
+## Prerequisites
 
-Provision infrastructure, build the custom image, push it to the registry, then deploy the Kubernetes manifests.
+Install the following tools:
+
+- Docker
+- Google Cloud SDK (`gcloud`)
+- Terraform
+- kubectl
+- Kustomize
+
+Authenticate with Google Cloud:
 
 ```bash
-cd terraform/
+gcloud auth login
+gcloud auth application-default login
+gcloud config set project <YOUR_PROJECT_ID>
+gcloud auth configure-docker
+```
+
+## Deployment
+
+### 1. Provision Infrastructure
+
+```bash
+cd terraform
+
 terraform init
 terraform apply
 
-# Update your project ID before building and in k8s/deployment.yaml
-docker build -t gcr.io/<YOUR_PROJECT_ID>/nexus-gcs:latest ../
-docker push gcr.io/<YOUR_PROJECT_ID>/nexus-gcs:latest
-
-kubectl apply -k ../k8s
+# Return to repository root
+cd ..
 ```
 
-## Verification
+### 2. Configure kubectl
 
-Verify the deployment:
+```bash
+gcloud container clusters get-credentials nexus-gke-cluster \
+    --zone us-central1-a \
+    --project <YOUR_PROJECT_ID>
+```
+
+### 3. Build and Push Image
+
+```bash
+docker build --platform linux/amd64 \
+    -t gcr.io/<YOUR_PROJECT_ID>/nexus-gcs:latest .
+
+docker push gcr.io/<YOUR_PROJECT_ID>/nexus-gcs:latest
+```
+
+### 4. Deploy Kubernetes Resources
+
+```bash
+kubectl apply -k k8s
+```
+
+### 5. Verify
 
 ```bash
 kubectl get pods
 kubectl get svc
 ```
 
-The Nexus pod should be in the **Running** state, and the LoadBalancer service should expose an **EXTERNAL-IP** that can be used to access the Nexus web UI.
+The Nexus Pod should reach the **Running** state, and the Service should expose an **EXTERNAL-IP** that can be used to access the Nexus web interface.
+
+## Troubleshooting
+
+Common issues encountered during deployment:
+
+- GKE authentication (`gke-gcloud-auth-plugin`)
+- Container Registry authentication
+- ImagePullBackOff caused by image registry authentication/IAM configuration
+- Nexus filesystem permissions on PersistentVolume
+- Resource requests exceeding node capacity
 
 
 ## Continuous Integration Proposal (Task Number 5)
@@ -140,22 +188,6 @@ A GitHub Actions workflow would be triggered whenever changes are pushed to the 
 <summary><b>8. Nexus UI Dashboard</b> — Nexus Repository Manager web interface landing page</summary>
 
 ![Nexus Dashboard UI](./screenshots/nexus-dashboard.png)
-</details>
-
-<details>
-<summary><b>Additional Screenshots</b> (Click to expand optional GCP Console views)</summary>
-
-#### GKE Cluster Health Overview
-![GKE Cluster Overview](./screenshots/gke-cluster-overview.png)
-
-#### Compute Engine VM Instance
-![Compute Engine VM Instances](./screenshots/compute-engine-vm-instances.png)
-
-#### GCS Bucket Object Browser
-![GCS Bucket Details](./screenshots/gcs-bucket-details.png)
-
-#### Nexus Repository Browser
-![Nexus Repository Browse UI](./screenshots/nexus-browse-ui.png)
 </details>
 
 ## Cleanup
